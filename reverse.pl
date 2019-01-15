@@ -1,17 +1,17 @@
 =info
-    1. 当Perl数组存储的索引超过一定量，也会提示 out_of_memory
-    2. 不以哈希结构存储 pos 和 length 信息。 3GB文件，1024*1024*20行
-       耗时 15.2秒，占用600MB。第二次执行因为有缓存，耗时7.7秒
-       将 unshift 改为push，耗时差异不大
+    BigTextFile - Reverse
+    523066680/vicyang
+    2019-01
 =cut
 
 use Devel::Size qw(size total_size);
 use File::Basename;
 STDOUT->autoflush(1);
-my $src="F:/A.txt";
+my $src="F:/A_Parts.txt";
 my $dst=$src;
 $dst=~s/(\.\w+)$/_REV$1/;
 
+open my $DST, "<:raw", $src or die "$!\n";
 open my $fh, "<:raw", $src or die "$!\n";
 my $s;
 my $prev = 0;
@@ -23,16 +23,30 @@ while ( !eof($fh) )
     $s = readline($fh);
     $pos = tell($fh);
     $len = $pos-$prev;
-    $index .= pack("LL", $prev, $len);
+    $index .= pack("L", $len);
     $prev = $pos;
 }
 printf "Done\n";
-printf "%d\n", total_size($index)/(1024*1024);
+printf "%d MB\n", total_size($index)/(1024*1024);
 
-# for my $idx (@index) 
-# {
-#     seek($fh, $idx->{pos}, SEEK_SET);
-#     read( $fh, $s, $idx->{len} );
-#     $s=~s/\r\n//;
-#     printf "%s\n", $s; 
-# }
+my $data;
+my $sh_pos = length($index);
+my $fh_pos = -s $src;
+seek($fh, $fh_pos, 0);
+
+# string as file handle
+open my $sh, "<", \$index;
+while ( $sh_pos >= 4 )
+{
+    seek $sh, $sh_pos-4, 0;
+    read $sh, $data, 4;
+    $len = unpack("L", $data);
+    $fh_pos -= $len;
+    seek $fh, $fh_pos, 0;
+    read( $fh, $s, $len );
+    $s=~s/\r\n//;
+    printf "%d %d %s\n", $len, $fh_pos, $s;
+    $sh_pos -= 4;
+}
+close $sh;
+close $fh;
