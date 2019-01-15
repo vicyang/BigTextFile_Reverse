@@ -16,18 +16,17 @@ open my $fh, "<:raw", $src or die "$!\n";
 my $s;
 my $prev = 0;
 my ($len, $pos);
-my @index;
+my $index = "";
 printf "Loading index ... ";
 while ( !eof($fh) )
 {
     $s = readline($fh);
     $pos = tell($fh);
-    unshift @index, $prev;
+    $index .= pack("L", $prev);
     $prev = $pos;
 }
 printf "Done\n";
-printf "%d %d\n", $#index, $index[0];
-printf "%d\n", total_size(\@index)/(1024*1024);
+printf "%d\n", total_size($index)/(1024*1024);
 
 # for my $idx (@index) 
 # {
