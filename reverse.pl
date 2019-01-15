@@ -4,6 +4,7 @@
     2019-01
 =cut
 
+use strict;
 use Devel::Size qw(size total_size);
 use File::Basename;
 STDOUT->autoflush(1);
@@ -12,32 +13,39 @@ my $dst = $src;
    $dst =~s/(\.\w+)$/_REV$1/;
 
 my $index;
-get_index( $src, $index);
-exit;
+get_index( $src, \$index );
+reverse_write( $src, $dst, \$index );
 
-open my $DST, ">:raw", $dst or die "$!\n";
-
-my $data;
-my $sh_pos = length($index);
-my $fh_pos = -s $src;
-seek($fh, $fh_pos, 0);
-
-# string as file handle
-open my $sh, "<", \$index;
-while ( $sh_pos >= 4 )
+sub reverse_write
 {
-    seek $sh, $sh_pos-4, 0;
-    read $sh, $data, 4;
-    $len = unpack("L", $data);
-    $fh_pos -= $len;
-    seek $fh, $fh_pos, 0;
-    read( $fh, $s, $len );
-    #$s=~s/\r\n//;
-    printf $DST "%s", $s;
-    $sh_pos -= 4;
+    my ($srcfile, $dstfile, $index) = @_;
+    open my $SRC, "<:raw", $srcfile or die "$!\n";
+    open my $DST, ">:raw", $dstfile or die "$!\n";
+    my $data;
+    my $len;
+    my $s;
+    my $SS_POS = length( $$index );
+    my $SRC_POS = -s $srcfile;
+    seek($SRC, $SRC_POS, 0);
+
+    # StringStream
+    open my $SS, "<", $index;
+    while ( $SS_POS >= 4 )
+    {
+        seek $SS, $SS_POS-4, 0;
+        read $SS, $data, 4;
+        $len = unpack("L", $data);
+        $SRC_POS -= $len;
+        seek $SRC, $SRC_POS, 0;
+        read( $SRC, $s, $len );
+        #$s=~s/\r\n//;
+        printf $DST "%s", $s;
+        $SS_POS -= 4;
+    }
+
+    close $SRC;
+    close $SS;
 }
-close $sh;
-close $fh;
 
 sub get_index
 {
@@ -51,7 +59,7 @@ sub get_index
     {
         $s = readline($fh);
         $pos = tell($fh);
-        $index .= pack("L", $pos-$prev);
+        $$ref .= pack("L", $pos-$prev);
         $prev = $pos;
     }
     printf "Done\n";
