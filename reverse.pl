@@ -8,7 +8,7 @@ use strict;
 use Devel::Size qw(size total_size);
 use File::Basename;
 STDOUT->autoflush(1);
-my $src = "F:/A.txt";
+my $src = "F:/A_Parts.txt";
 my $dst = $src;
    $dst =~s/(\.\w+)$/_REV$1/;
 
@@ -51,16 +51,11 @@ sub get_index
 {
     my ($file, $ref) = @_;
     open my $fh, "<:raw", $file or die "$!\n";
-    my ($pos, $prev) = (0, 0);
     printf "Loading index ... ";
     $$ref = "";
     my $s;
-    while ( !eof($fh) )
-    {
-        $s = readline($fh);
-        $pos = tell($fh);
-        $$ref .= pack("L", $pos-$prev);
-        $prev = $pos;
+    while ( $s = readline($fh) ) {
+        $$ref .= pack("L", length($s) );
     }
     printf "Done\n";
     printf "Memory usage: %.2f MB\n", total_size($ref)/(1024*1024);
