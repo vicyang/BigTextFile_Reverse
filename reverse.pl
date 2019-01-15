@@ -22,7 +22,8 @@ while ( !eof($fh) )
 {
     $s = readline($fh);
     $pos = tell($fh);
-    $index .= pack("L", $prev);
+    $len = $pos-$prev;
+    $index .= pack("LL", $prev, $len);
     $prev = $pos;
 }
 printf "Done\n";
