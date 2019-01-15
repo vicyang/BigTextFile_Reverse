@@ -7,27 +7,15 @@
 use Devel::Size qw(size total_size);
 use File::Basename;
 STDOUT->autoflush(1);
-my $src="F:/A.txt";
-my $dst=$src;
-$dst=~s/(\.\w+)$/_REV$1/;
+my $src = "F:/A.txt";
+my $dst = $src;
+   $dst =~s/(\.\w+)$/_REV$1/;
+
+my $index;
+get_index( $src, $index);
+exit;
 
 open my $DST, ">:raw", $dst or die "$!\n";
-open my $fh, "<:raw", $src or die "$!\n";
-my $s;
-my $prev = 0;
-my ($len, $pos);
-my $index = "";
-printf "Loading index ... ";
-while ( !eof($fh) )
-{
-    readline($fh);
-    $pos = tell($fh);
-    $len = $pos-$prev;
-    $index .= pack("L", $len);
-    $prev = $pos;
-}
-printf "Done\n";
-printf "%d MB\n", total_size($index)/(1024*1024);
 
 my $data;
 my $sh_pos = length($index);
@@ -50,3 +38,23 @@ while ( $sh_pos >= 4 )
 }
 close $sh;
 close $fh;
+
+sub get_index
+{
+    my ($file, $ref) = @_;
+    open my $fh, "<:raw", $file or die "$!\n";
+    my ($pos, $prev) = (0, 0);
+    printf "Loading index ... ";
+    $$ref = "";
+    my $s;
+    while ( !eof($fh) )
+    {
+        $s = readline($fh);
+        $pos = tell($fh);
+        $index .= pack("L", $pos-$prev);
+        $prev = $pos;
+    }
+    printf "Done\n";
+    printf "Memory usage: %.2f MB\n", total_size($ref)/(1024*1024);
+    close $fh;
+}
