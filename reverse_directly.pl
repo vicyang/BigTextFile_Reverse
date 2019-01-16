@@ -7,7 +7,7 @@
 use strict;
 use Fcntl qw(:seek);
 STDOUT->autoflush(1);
-my $src = "F:/A_Parts.txt";
+my $src = "F:/A.txt";
 my $dst = $src;
    $dst =~s/(\.\w+)$/_REV$1/;
 
@@ -20,19 +20,18 @@ sub reverse_write
     open my $DST, ">:raw", $dstfile or die "$!\n";
     my $total = -s $SRC;
     my $buffsize = 2**16;
-    my $offset = 0;
+    my $offset = $total;
     my $buff;
     my @lines;
     my $left = "";
     my $count = 0;
     seek $SRC, 0, SEEK_END;
-    while ( $offset < $total-$buffsize )
+    while ( $offset >= $buffsize )
     {
         $count++;
-        $offset += $buffsize;
-        seek $SRC, -$buffsize, SEEK_CUR;
+        $offset -= $buffsize;
+        seek $SRC, $offset, SEEK_SET;
         read $SRC, $buff, $buffsize;
-        seek $SRC, -$buffsize, SEEK_CUR;
         $buff = $buff . $left;
 
         if ( $buff =~/\r?\n/ ) {
@@ -46,8 +45,6 @@ sub reverse_write
     }
 
     #printf "%d %d %d %d\n", $count, $count*$buffsize, (-s $srcfile) - $count*$buffsize, $offset;
-
-    $offset = tell $SRC;
     seek $SRC, 0, SEEK_SET;
     read $SRC, $buff, $offset;
     @lines = reverse(split /\r?\n/, $buff .$left );
