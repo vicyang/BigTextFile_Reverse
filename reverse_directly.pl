@@ -20,7 +20,7 @@ sub reverse_write
     open my $DST, ">:raw", $dstfile or die "$!\n";
 
     # 缓冲区大小
-    my $buffsize = 2**2;
+    my $buffsize = 2**16;
     my $offset = -s $SRC;
     my $buff;
     my @lines;
@@ -48,4 +48,6 @@ sub reverse_write
     read $SRC, $buff, $offset;
     @lines = reverse(split /\r?\n/, $buff .$left );
     print $DST join("\r\n", @lines);
+    close $SRC;
+    close $DST;
 }
