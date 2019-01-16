@@ -6,7 +6,6 @@
 
 use strict;
 use Fcntl qw(:seek);
-use File::Basename;
 STDOUT->autoflush(1);
 my $src = "F:/A_Parts.txt";
 my $dst = $src;
@@ -17,22 +16,35 @@ reverse_write( $src, $dst );
 sub reverse_write
 {
     my ($srcfile, $dstfile) = @_;
-    open my $SRC, "<:raw", $srcfile or die "$!\n";
+    open my $SRC, "<:raw:crlf", $srcfile or die "$!\n";
     open my $DST, ">:raw", $dstfile or die "$!\n";
-    my $offset = (-s $srcfile) - 1;
-    my $char;
+    my $buffsize = 2 ** 8;
+    my $offset = -s $srcfile;
+    my $pool;
     my $buff;
-    while ($offset >= 1) 
+    my @lines;
+    my $after;
+    my $before;
+    while ($offset >= $buffsize)
     {
+        $offset-=$buffsize;
         seek $SRC, $offset, SEEK_SET;
-        read $SRC, $char, 1;
-        $buff .= $char;
-        if ( $char eq "\n" ) { 
-            $buff = "";
-            #printf "%d\n", tell $SRC;
-        }
-        $offset--;
+        read $SRC, $buff, $buffsize;
+        #if ( $buff=~/\n$/ ) { $after = "\n" } else { $after = "" }
+        # if ( $buff=~/^\r?\n/ ) { $before = "\n" } else { $before = "" }
+        @lines = reverse(split "\n", $buff);
+        printf "%s%s%s:", $before,  join("\n", @lines), $after;
+        #unless ($lines[-1]=~/\n$/) { print "\n" }
+        $buff = "";
+        @lines = ();
+        exit;
     }
 
-}
+    #printf "%d %d %d %d\n", $count, $count*$buffsize, (-s $srcfile) - $count*$buffsize, $offset;
 
+    seek $SRC, 0, SEEK_SET;
+    read $SRC, $buff, $offset;
+    @lines = reverse(split /\r?\n/, $buff);
+    print join("\n", @lines);
+
+}
