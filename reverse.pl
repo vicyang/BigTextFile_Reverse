@@ -13,7 +13,9 @@ my $dst = $src;
    $dst =~s/(\.\w+)$/_REV$1/;
 
 my $index;
+# 先按行读取（但是不积累缓冲区），取得每一行的长度（可以间接得到每一行的offset）
 get_index( $src, \$index );
+# 根据获取的每行长度信息，反方向提取文本
 reverse_write( $src, $dst, \$index );
 
 sub reverse_write
