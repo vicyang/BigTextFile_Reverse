@@ -20,7 +20,7 @@ sub reverse_write
     open my $DST, ">:raw", $dstfile or die "$!\n";
 
     # 缓冲区大小
-    my $buffsize = 2**16;
+    my $buffsize = 2**2;
     my $offset = -s $SRC;
     my $buff;
     my @lines;
@@ -30,9 +30,10 @@ sub reverse_write
         $offset -= $buffsize;
         seek $SRC, $offset, SEEK_SET;
         read $SRC, $buff, $buffsize;
+        # 拼接，考虑单行文本小于 $buffsize 的情况
         $buff = $buff . $left;
         if ( $buff =~/\r?\n/ ) {
-            @lines = reverse( split /\r?\n/, $buff );
+            @lines = reverse( split /\r?\n/, $buff, -1 );
             $left = pop @lines;
             printf $DST "%s\r\n", join("\r\n", @lines);
         } else {
@@ -41,6 +42,7 @@ sub reverse_write
         }
     }
 
+    # 如果 offset 未归零，读取剩下(源文件的开头)部分
     return if ($offset <= 0);
     seek $SRC, 0, SEEK_SET;
     read $SRC, $buff, $offset;
